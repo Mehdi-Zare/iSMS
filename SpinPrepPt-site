@@ -1,0 +1,50 @@
+#!/bin/bash
+clear
+for i in */site
+	do cd $i
+	echo "current directory = $i"
+	pt=`grep " pt" coord | wc -l`; c=`grep " c" coord | wc -l`; o=`grep " o" coord | wc -l`; h=`grep " h" coord | wc -l`
+	echo "Pt = $pt , C = $c , O = $o , H = $h"
+	n=$(($pt*18+$c*6+$o*8+$h*1))
+	mag=`grep " 1 F=" OSZICAR | awk '{print $10}'`
+	echo "magnetic moment = $mag"
+	echo "# of electrons = $n"
+
+	intmag=${mag%.*}
+	nto2=$(($n % 2))
+	intmagto2=$(($intmag % 2))
+
+	if [ "$nto2" -eq 0  ] && [ "$intmagto2" -eq  0  ]
+        	then
+               		 mid=$intmag
+	elif [ "$nto2" -eq 0  ] && [ "$intmagto2" -ne  0  ]
+        	then
+                	mid=$(($intmag+1))
+
+	elif [ "$nto2" -ne 0  ] && [ "$intmagto2" -eq  0  ]
+        	then
+                	mid=$(($intmag+1))
+
+	elif [ "$nto2" -ne 0  ] && [ "$intmagto2" -ne  0  ]
+        	then
+                	mid=$intmag
+	fi
+
+	for j in $(($mid-8)) $(($mid-6)) $(($mid-4)) $(($mid-2)) $(($mid)) $(($mid+2)) $(($mid+4)) $(($mid+6)) $(($mid+8))
+		do mkdir SPIN-$j
+		cd SPIN-$j
+		cp ../{coord,TurbomoleDefineSPIN} .
+		echo "current directory now is = SPIN-$j"
+		a=$((($n+$j)/2)); b=$(($a-$j)); echo " a = $a, b = $b"
+		aold=`grep "a 1-" TurbomoleDefineSPIN`
+		bold=`grep "b 1-" TurbomoleDefineSPIN`
+		sed -i "s/$aold/a 1-$a/" TurbomoleDefineSPIN
+		sed -i "s/$bold/b 1-$b/" TurbomoleDefineSPIN 
+		chmod +x TurbomoleDefineSPIN
+		./TurbomoleDefineSPIN
+		cd ../
+	done
+	cd ../../
+	clear
+done
+clear
